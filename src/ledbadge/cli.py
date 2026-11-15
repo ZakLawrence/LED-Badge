@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from PIL import Image
 
 from . import device, effects
+from .design import Design, DesignMessage, DesignStore
 from .font import render_text
 from .protocol import (FRAME_WIDTH, MAX_MESSAGES, WIDTH, Message, Mode,
                        build_payload, max_animation_frames)
@@ -40,6 +41,8 @@ def _common(p: argparse.ArgumentParser, mode: bool = True) -> None:
     p.add_argument("-p", "--preview", action="store_true",
                    help="print an ASCII preview and do not upload")
     p.add_argument("--png", metavar="FILE", help="also save an LED-style preview PNG")
+    p.add_argument("--save", metavar="NAME",
+                   help="save the result as a design (combine with -p to save without uploading)")
     p.add_argument("-t", "--transport", choices=("auto", "usb", "ble"), default="auto",
                    help="auto = USB if plugged in, else Bluetooth (default)")
     p.add_argument("--frame-offset", type=int, default=2,
@@ -67,9 +70,18 @@ def _upload(args: argparse.Namespace, messages: list[Message], quiet: bool = Fal
             strip = messages[0].bitmap
             upscale_preview(strip).save(args.png)
             print(f"saved preview of message 0 to {args.png}")
-        if args.preview:
-            return
-    payload = build_payload(messages, brightness=args.brightness)
+    if getattr(args, "save", None):
+        design = Design(args.save, [DesignMessage.from_message(m, frame_offset=args.frame_offset)
+                                    for m in messages], args.brightness)
+        path = DesignStore(args.designs_dir).save(design)
+        print(f"saved design to {path}")
+    if args.preview:
+        return
+    _send(args, build_payload(messages, brightness=args.brightness), len(messages), quiet)
+
+
+def _send(args: argparse.Namespace, payload: bytes, n_messages: int, quiet: bool = False) -> None:
+    """Send a payload over the transport chosen by ``args.transport``."""
     transport = args.transport
     if transport == "auto":
         transport = "usb" if device.list_devices() else "ble"
@@ -84,7 +96,7 @@ def _upload(args: argparse.Namespace, messages: list[Message], quiet: bool = Fal
     except (device.BadgeNotFound, RuntimeError) as e:
         sys.exit(str(e))
     if not quiet:
-        print(f"uploaded {len(messages)} message(s), {len(payload)} bytes via {transport} in {dt:.2f} s")
+        print(f"uploaded {n_messages} message(s), {len(payload)} bytes via {transport} in {dt:.2f} s")
 
 
 def _msg(args: argparse.Namespace, bitmap: Image.Image, mode: Mode, speed: int) -> Message:
@@ -99,6 +111,40 @@ def cmd_list(args: argparse.Namespace) -> None:
         print("no badge found (USB 0416:5020)")
     for d in devs:
         print(f"{d['manufacturer_string']} {d['product_string']}  path={d['path'].decode()}")
+
+
+def cmd_designs(args: argparse.Namespace) -> None:
+    store = DesignStore(args.designs_dir)
+    names = store.names()
+    if not names:
+        print(f"no designs in {store.folder}/")
+    for name in names:
+        try:
+            d = store.load(name)
+            info = ", ".join(f"{m.mode.name.lower()}x{len(m.frames)}" for m in d.messages)
+            print(f"{name:24s} {len(d.payload()):5d} B  [{info}]")
+        except (ValueError, KeyError) as e:
+            print(f"{name:24s} INVALID: {e}")
+
+
+def cmd_show(args: argparse.Namespace) -> None:
+    try:
+        design = DesignStore(args.designs_dir).load(args.name)
+    except (FileNotFoundError, ValueError) as e:
+        sys.exit(str(e))
+    if args.brightness is not None:
+        design.brightness = args.brightness
+    if args.preview:
+        args.save = None
+        args.png = None
+        _upload(args, design.to_messages(args.frame_offset))
+        return
+    _send(args, design.payload(args.frame_offset), len(design.messages))
+
+
+def cmd_gui(args: argparse.Namespace) -> None:
+    from .gui.server import serve
+    serve(args.designs_dir, host=args.host, port=args.port, open_browser=not args.no_browser)
 
 
 def cmd_scan(args: argparse.Namespace) -> None:
@@ -191,7 +237,8 @@ def cmd_test(args: argparse.Namespace) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``badge`` command."""
-    ap = argparse.ArgumentParser(prog="badge", description="Control a Badge Magic LED badge over USB.")
+    ap = argparse.ArgumentParser(prog="badge", description="Control a Badge Magic LED badge over USB or BLE.")
+    ap.add_argument("--designs-dir", default="designs", help="folder of saved designs (default ./designs)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("list", help="list badges attached over USB").set_defaults(func=cmd_list)
@@ -232,6 +279,23 @@ def main(argv: list[str] | None = None) -> None:
                    help="experimental: N frames/minute with a seconds bar (e.g. 120 at speed 3)")
     _common(p, mode=False)
     p.set_defaults(func=cmd_clock, mode=None)
+
+    sub.add_parser("designs", help="list saved designs").set_defaults(func=cmd_designs)
+
+    p = sub.add_parser("show", help="upload a saved design")
+    p.add_argument("name")
+    p.add_argument("-B", "--brightness", type=int, choices=(25, 50, 75, 100),
+                   help="override the design's brightness")
+    p.add_argument("-p", "--preview", action="store_true", help="print the design instead of uploading")
+    p.add_argument("-t", "--transport", choices=("auto", "usb", "ble"), default="auto")
+    p.add_argument("--frame-offset", type=int, default=2)
+    p.set_defaults(func=cmd_show)
+
+    p = sub.add_parser("gui", help="open the design editor in your browser")
+    p.add_argument("--port", type=int, default=8044)
+    p.add_argument("--host", default="127.0.0.1", help="bind address (default: this machine only)")
+    p.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
+    p.set_defaults(func=cmd_gui)
 
     p = sub.add_parser("test", help="hardware test patterns")
     p.add_argument("pattern", choices=("border", "frame", "modes"))

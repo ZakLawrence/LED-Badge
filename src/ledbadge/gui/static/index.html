@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badge Studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Badge Studio</h1>
+  <label class="name">Design
+    <input id="design-name" value="untitled" spellcheck="false" maxlength="64">
+  </label>
+  <button id="btn-new" title="Start a new design">New</button>
+  <button id="btn-save" class="primary" title="Save to designs/ (Ctrl+S)">Save</button>
+  <span id="dirty" class="dirty" hidden>unsaved</span>
+  <span class="spacer"></span>
+  <label>Brightness
+    <select id="brightness">
+      <option value="100">100%</option><option value="75">75%</option>
+      <option value="50">50%</option><option value="25">25%</option>
+    </select>
+  </label>
+  <label>Via
+    <select id="transport">
+      <option value="auto">auto</option><option value="usb">USB</option><option value="ble">Bluetooth</option>
+    </select>
+  </label>
+  <span id="usb-status" class="pill">USB: ?</span>
+  <button id="btn-upload" class="accent" title="Send this design to the badge">Upload to badge</button>
+</header>
+
+<div class="layout">
+  <aside class="library">
+    <h2>Saved designs</h2>
+    <ul id="design-list"></ul>
+    <p class="hint" id="design-folder"></p>
+  </aside>
+
+  <main>
+    <section class="messages">
+      <div id="msg-tabs" class="tabs"></div>
+      <div class="msg-settings">
+        <label>Mode
+          <select id="mode">
+            <option value="left">scroll left</option>
+            <option value="right">scroll right</option>
+            <option value="up">scroll up</option>
+            <option value="down">scroll down</option>
+            <option value="fixed">fixed</option>
+            <option value="animation">animation</option>
+            <option value="snowflake">snowflake</option>
+            <option value="picture">picture (curtain)</option>
+            <option value="laser">laser</option>
+          </select>
+        </label>
+        <label>Speed <input id="speed" type="range" min="1" max="8" step="1"><output id="speed-out"></output></label>
+        <label class="check"><input id="blink" type="checkbox"> blink</label>
+        <label class="check"><input id="marquee" type="checkbox"> border</label>
+        <button id="btn-del-msg" class="danger small" title="Delete this message">Delete message</button>
+      </div>
+    </section>
+
+    <section class="preview-wrap">
+      <div class="preview-head">
+        <h2>Preview <span class="hint">(approximate timing)</span></h2>
+        <button id="btn-play" class="small">Pause</button>
+      </div>
+      <canvas id="preview" width="880" height="220"></canvas>
+    </section>
+
+    <section class="editor-wrap">
+      <div class="toolbar">
+        <span class="group">
+          <button data-tool="draw" class="tool active" title="Draw (D)">✏️ Draw</button>
+          <button data-tool="erase" class="tool" title="Erase (E)">⌫ Erase</button>
+        </span>
+        <span class="group">
+          <button id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
+          <button id="btn-redo" title="Redo (Ctrl+Shift+Z)">↷</button>
+        </span>
+        <span class="group">
+          <button data-op="clear" title="Clear frame">Clear</button>
+          <button data-op="fill" title="Fill frame">Fill</button>
+          <button data-op="invert" title="Invert frame">Invert</button>
+          <button data-op="flip" title="Mirror horizontally">⇋</button>
+        </span>
+        <span class="group">
+          <button data-op="left" title="Shift left">←</button>
+          <button data-op="right" title="Shift right">→</button>
+          <button data-op="up" title="Shift up">↑</button>
+          <button data-op="down" title="Shift down">↓</button>
+        </span>
+        <label class="check" title="Show the previous frame faintly"><input id="onion" type="checkbox" checked> onion skin</label>
+        <label id="width-ctl">Width <input id="frame-width" type="number" min="1" max="2000" step="1"> px</label>
+      </div>
+      <div class="editor-scroll"><canvas id="editor"></canvas></div>
+      <div class="frames-head">
+        <h2>Frames <span id="frame-count" class="hint"></span></h2>
+        <span class="group">
+          <button id="btn-add-frame" class="small" title="Add blank frame">+ Blank</button>
+          <button id="btn-dup-frame" class="small" title="Duplicate frame">Duplicate</button>
+          <button id="btn-move-l" class="small" title="Move frame earlier">◀</button>
+          <button id="btn-move-r" class="small" title="Move frame later">▶</button>
+          <button id="btn-del-frame" class="small danger" title="Delete frame">Delete</button>
+        </span>
+      </div>
+      <div id="frame-strip" class="frame-strip"></div>
+      <p class="hint" id="frames-hint"></p>
+    </section>
+  </main>
+
+  <aside class="generators">
+    <h2>Generate</h2>
+    <div class="tabs" id="gen-tabs">
+      <button data-gen="text" class="active">Text</button>
+      <button data-gen="image">Image</button>
+      <button data-gen="life">Life</button>
+      <button data-gen="clock">Clock</button>
+    </div>
+
+    <form class="gen" data-gen="text">
+      <label>Text <input name="text" value="Hello!" autocomplete="off"></label>
+      <label>Font <select name="font"><option value="small">small (5×7)</option><option value="big">big digits (5×9)</option></select></label>
+      <label class="check"><input name="pad" type="checkbox" checked> pad to 44 px (centre)</label>
+    </form>
+
+    <form class="gen" data-gen="image" hidden>
+      <label>File <input name="file" type="file" accept="image/*"></label>
+      <label>Width <input name="width" type="number" min="1" placeholder="auto"></label>
+      <label class="check"><input name="dither" type="checkbox" checked> dither</label>
+      <label class="check"><input name="invert" type="checkbox"> invert</label>
+      <label>Threshold <input name="threshold" type="number" min="0" max="255" value="128"></label>
+      <label>Max GIF frames <input name="max_frames" type="number" min="1" max="123" value="60"></label>
+      <p class="hint">Animated GIFs become animation frames.</p>
+    </form>
+
+    <form class="gen" data-gen="life" hidden>
+      <label>Generations <input name="frames" type="number" min="2" max="123" value="80"></label>
+      <label>Density <input name="density" type="number" min="0.05" max="0.95" step="0.05" value="0.35"></label>
+      <label>Seed <input name="seed" type="number" placeholder="random"></label>
+      <label class="check"><input name="wrap" type="checkbox" checked> wrap edges (torus)</label>
+      <p class="hint" id="life-seed"></p>
+    </form>
+
+    <form class="gen" data-gen="clock" hidden>
+      <label>Format <input name="format" value="%H:%M"></label>
+      <p class="hint">Time at generation. The badge has no clock, so this is a snapshot
+        (two frames for the blinking colon; use animation mode, speed 3).</p>
+    </form>
+
+    <div class="gen-actions">
+      <button id="gen-replace" class="primary" title="Replace this message's frames">Replace frames</button>
+      <button id="gen-append" title="Add after the current frame">Append</button>
+      <button id="gen-new-msg" title="Put the result in a new message">New message</button>
+    </div>
+
+    <div class="meter">
+      <div class="meter-bar"><div id="meter-fill"></div></div>
+      <p id="meter-text" class="hint"></p>
+    </div>
+
+    <details class="help">
+      <summary>Tips</summary>
+      <ul>
+        <li>Click/drag to draw; starting on a lit pixel erases. Right-drag always erases.</li>
+        <li><kbd>[</kbd> / <kbd>]</kbd> previous/next frame, <kbd>Ctrl+Z</kbd> undo, <kbd>Ctrl+S</kbd> save.</li>
+        <li>Animation mode: every frame is one 44-px screen. Other modes join frames left-to-right.</li>
+        <li>USB uploads are instant but the badge only shows content after unplugging.
+          Bluetooth needs a button press per upload and takes ~1 s per 66 bytes.</li>
+      </ul>
+    </details>
+  </aside>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

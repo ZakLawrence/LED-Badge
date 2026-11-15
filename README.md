@@ -11,7 +11,23 @@ uv run badge image cat.png                # still image (dithered), or animated 
 uv run badge life                         # Game of Life, pre-computed and played on the badge
 uv run badge clock --live                 # big-digit clock, re-uploaded every minute
 uv run badge test border|frame|modes      # hardware test patterns
+
+uv run badge gui                          # Badge Studio editor in your browser (http://localhost:8044)
+uv run badge life --save mylife -p        # save any generated content as a design (no upload with -p)
+uv run badge designs                      # list saved designs
+uv run badge show mylife                  # upload a saved design
 ```
+
+## Badge Studio (GUI)
+
+`badge gui` serves a local editor (bound to 127.0.0.1 only, no extra dependencies):
+pixel editor with onion skin and undo, frame strip, up to 8 messages with mode/speed/blink/border,
+an LED-style preview (approximate timing), generators (text, image/GIF, Game of Life, clock),
+a design library and an Upload button (USB or Bluetooth) with an 8 KB size meter.
+Open a design directly with `http://localhost:8044/?design=NAME`.
+
+Designs are JSON files in `designs/` (frames stored as `.`/`#` rows, so they are readable and diffable).
+In animation mode each frame is one 44x11 screen; in other modes frames are joined left-to-right.
 
 Add `-p` to any command to preview in the terminal without uploading, `--png out.png` for an LED-style image.
 Common options: `-m/--mode` (left, right, up, down, fixed, animation, snowflake, picture, laser),

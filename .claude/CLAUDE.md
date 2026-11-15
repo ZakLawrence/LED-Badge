@@ -10,6 +10,9 @@ Desktop control for a Badge Magic LED name badge (11x44 px, https://badgemagic.f
 - Do NOT suggest flashing fossasia/badgemagic-firmware: it targets CH582M only, irreversible (stock fw read-protected).
 - Env: `uv` project, Python 3.12, deps `hidapi`, `bleak`, `Pillow` (dev: `pytest`). Run with `uv run badge ...`, tests with `uv run pytest`.
 - Layout: `src/ledbadge/` — `protocol.py` (payload format), `device.py` (USB HID), `ble.py` (Bluetooth), `font.py` (hand-drawn pixel fonts),
-  `render.py` (images/animation strips/previews), `effects.py` (Game of Life, clock, test patterns), `cli.py`.
+  `render.py` (images/animation strips/previews), `effects.py` (Game of Life, clock, test patterns), `design.py` (JSON designs in `designs/`),
+  `gui/` (stdlib HTTP server + static HTML/JS editor, `badge gui`), `cli.py`.
 - Protocol reference: fossasia/led-name-badge-ls32 `lednamebadge.py` (GPL — don't copy code, and don't execute it).
 - Use `-p/--preview` to see output in the terminal without uploading; uploads overwrite all 8 badge slots.
+- GUI checks: no node here; verify JS with headless Chrome (`--headless=new --dump-dom/--screenshot`, temp
+  `--user-data-dir`). The user declined the Claude-in-Chrome extension.
