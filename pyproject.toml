@@ -1,0 +1,26 @@
+[project]
+name = "ledbadge"
+version = "0.1.0"
+description = "Desktop control for Badge Magic LED name badges"
+readme = "README.md"
+authors = [
+    { name = "Zak Lawrence", email = "zlawrence97@outlook.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "bleak>=3.1.0",
+    "hidapi>=0.15.0",
+    "pillow>=13.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.25,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[project.scripts]
+badge = "ledbadge.cli:main"
