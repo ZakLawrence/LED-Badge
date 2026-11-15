@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 from PIL import Image, ImageOps, ImageSequence
 
-from .protocol import FRAME_WIDTH, HEIGHT, WIDTH
+from .protocol import ANIM_OFFSET, FRAME_WIDTH, HEIGHT, WIDTH
 
 
 def blank(width: int = WIDTH) -> Image.Image:
@@ -47,12 +47,12 @@ def fit_frame(img: Image.Image, width: int = WIDTH) -> Image.Image:
     return out
 
 
-def animation_strip(frames: Iterable[Image.Image], frame_offset: int = 2) -> Image.Image:
+def animation_strip(frames: Iterable[Image.Image], frame_offset: int = ANIM_OFFSET) -> Image.Image:
     """Concatenate 44-px frames into an animation-mode strip of 48-px frames.
 
     Animation mode consumes 48 columns per frame but the display only shows 44;
     ``frame_offset`` is where the visible window starts within each 48-px frame
-    (2 = centred; check with ``badge test frame`` on your hardware).
+    (see ``ANIM_OFFSET``; ``badge test frame`` shows it on the hardware).
     """
     frames = [fit_frame(f) for f in frames]
     strip = blank(FRAME_WIDTH * len(frames))

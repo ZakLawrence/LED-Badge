@@ -27,6 +27,9 @@ from PIL import Image
 HEIGHT = 11
 WIDTH = 44           # visible columns
 FRAME_WIDTH = 48     # animation-mode frame width (6 byte-columns)
+# Where the 44 visible columns start inside each 48-px animation frame. Observed on
+# the CH583 badge: the first 44 columns are shown (columns 44-47 are never visible).
+ANIM_OFFSET = 0
 MAX_MESSAGES = 8
 MAX_PAYLOAD = 8192
 HEADER_SIZE = 64

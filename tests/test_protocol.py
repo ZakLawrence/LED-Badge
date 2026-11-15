@@ -80,3 +80,14 @@ def test_life_and_clock_shapes():
     on, off = clock_frames(WHEN)
     assert on.size == off.size == (44, 11) and on.tobytes() != off.tobytes()
     assert len(clock_frames(WHEN, seconds_bar=120)) == 120
+
+
+def test_animation_frames_start_at_column_zero():
+    # Observed on hardware: the badge shows columns 0-43 of each 48-px frame, so a
+    # design's column 0 / 43 must land on strip columns 0 / 43 (and 48 / 91 for frame 2).
+    f = Image.new("1", (44, 11), 0)
+    f.putpixel((0, 5), 1)
+    f.putpixel((43, 5), 1)
+    strip = animation_strip([f, f])
+    lit = [x for x in range(strip.width) if strip.getpixel((x, 5))]
+    assert lit == [0, 43, 48, 91]

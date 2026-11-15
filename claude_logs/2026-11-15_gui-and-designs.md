@@ -38,3 +38,12 @@
 ## Open issues / next ideas
 - Preview scroll speeds are guesses; could calibrate by timing the real badge.
 - Ideas: playlists of designs, more on-badge effects (rain, spinner, snake demo), sprite/icon library for text.
+
+## Follow-up: animation frame offset fix
+- Symptom (user, "Coffee Time" design): animation ran ~2 px past the right edge and the C did not start in
+  column 0. Cause: frames were placed at offset 2 inside each 48-px animation frame (assumed centred window);
+  the CH583 badge actually shows columns 0-43.
+- Fix: single constant `ANIM_OFFSET = 0` in `protocol.py`, used by `render.animation_strip`, `design.py`, and
+  the CLI `--frame-offset` defaults. Regression test `test_animation_frames_start_at_column_zero`.
+- Verified: 19 tests pass; Coffee Time re-uploaded over USB and the user confirmed it now displays correctly.
+- Saved designs store 44-px frames, so existing design files did not need changes.

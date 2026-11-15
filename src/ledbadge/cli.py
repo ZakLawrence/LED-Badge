@@ -12,7 +12,7 @@ from PIL import Image
 from . import device, effects
 from .design import Design, DesignMessage, DesignStore
 from .font import render_text
-from .protocol import (FRAME_WIDTH, MAX_MESSAGES, WIDTH, Message, Mode,
+from .protocol import (ANIM_OFFSET, FRAME_WIDTH, MAX_MESSAGES, WIDTH, Message, Mode,
                        build_payload, max_animation_frames)
 from .render import (animation_strip, ascii_preview, fit_frame, gif_frames, image_to_bitmap,
                      upscale_preview)
@@ -45,8 +45,8 @@ def _common(p: argparse.ArgumentParser, mode: bool = True) -> None:
                    help="save the result as a design (combine with -p to save without uploading)")
     p.add_argument("-t", "--transport", choices=("auto", "usb", "ble"), default="auto",
                    help="auto = USB if plugged in, else Bluetooth (default)")
-    p.add_argument("--frame-offset", type=int, default=2,
-                   help="visible window start inside 48-px animation frames (default 2)")
+    p.add_argument("--frame-offset", type=int, default=ANIM_OFFSET,
+                   help=f"visible window start inside 48-px animation frames (default {ANIM_OFFSET})")
 
 
 def _upload(args: argparse.Namespace, messages: list[Message], quiet: bool = False) -> None:
@@ -288,7 +288,7 @@ def main(argv: list[str] | None = None) -> None:
                    help="override the design's brightness")
     p.add_argument("-p", "--preview", action="store_true", help="print the design instead of uploading")
     p.add_argument("-t", "--transport", choices=("auto", "usb", "ble"), default="auto")
-    p.add_argument("--frame-offset", type=int, default=2)
+    p.add_argument("--frame-offset", type=int, default=ANIM_OFFSET)
     p.set_defaults(func=cmd_show)
 
     p = sub.add_parser("gui", help="open the design editor in your browser")
