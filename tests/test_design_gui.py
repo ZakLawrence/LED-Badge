@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer
 
 import pytest
 
-from ledbadge.design import Design, DesignMessage, DesignStore, image_to_rows, rows_to_image
+from ledbadge.design import Design, DesignMessage, DesignStore, combine, image_to_rows, rows_to_image
 from ledbadge.effects import game_of_life
 from ledbadge.font import render_text
 from ledbadge.gui.server import make_handler
@@ -106,3 +106,17 @@ def test_server_design_crud(server):
     assert s == 400
     s, _ = call(server, "DELETE", "/api/designs/my%20design")
     assert call(server, "GET", "/api/designs")[1]["designs"] == []
+
+
+def test_combine_designs(tmp_path):
+    one = lambda name, mode: Design(name, [DesignMessage([image_to_rows(render_text(name, min_width=44))], mode)])
+    a, b = one("A", Mode.FIXED), one("B", Mode.LEFT)
+    c = combine([a, b], "ab")
+    assert [m.mode for m in c.messages] == [Mode.FIXED, Mode.LEFT]
+    assert len(c.payload()) == 64 + 2 * 66 + 60  # 196 -> padded to 256
+    with pytest.raises(ValueError, match="at most 8"):
+        combine([a] * 9)
+    big_frames, _ = game_of_life(100, seed=1)
+    big = Design("big", [DesignMessage.from_message(Message(animation_strip(big_frames), Mode.ANIMATION))])
+    with pytest.raises(ValueError, match="big"):
+        combine([big, big])

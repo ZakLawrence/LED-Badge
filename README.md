@@ -16,6 +16,7 @@ uv run badge gui                          # Badge Studio editor in your browser 
 uv run badge life --save mylife -p        # save any generated content as a design (no upload with -p)
 uv run badge designs                      # list saved designs
 uv run badge show mylife                  # upload a saved design
+uv run badge show a b c                   # combine designs into one upload; the badge cycles through them
 ```
 
 ## Badge Studio (GUI)
@@ -41,5 +42,6 @@ Notes:
 - Bluetooth: the badge accepts **one upload per button press** (it disconnects and stops advertising
   after receiving the data), and it is slow: ~65 B/s, i.e. ~2 min for a full 8 KB animation.
   Fastest workflow for big content: plug in, upload over USB, unplug.
-- The badge holds up to 8 messages and ~8 KB of bitmap data (~123 animation frames).
+- The badge holds up to 8 messages and ~8 KB of bitmap data (~123 animation frames). It cycles through the
+  messages; pressing the badge button selects a single message to loop.
 - Animation mode plays 48-px-wide frames, of which 44 columns are visible (`badge test frame` checks the offset).

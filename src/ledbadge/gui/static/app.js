@@ -630,9 +630,31 @@ function renderLibrary() {
       if (loadedName === name) loadedName = null;
       refreshLibrary();
     };
-    li.append(del);
+    const add = document.createElement("button");
+    add.className = "add";
+    add.textContent = "+";
+    add.title = "Add this design's messages to the one you're editing (the badge cycles through them)";
+    add.onclick = (e) => { e.stopPropagation(); appendDesign(name); };
+    const btns = document.createElement("span");
+    btns.append(add, del);
+    li.append(btns);
     ul.append(li);
   }
+}
+async function appendDesign(name) {
+  let other;
+  try { other = fromJSON(await api("GET", "designs/" + encodeURIComponent(name))); }
+  catch (e) { return toast(e.message, "error"); }
+  const total = design.messages.length + other.messages.length;
+  if (total > 8) return toast(`that would make ${total} messages; the badge holds at most 8`, "error");
+  checkpoint();
+  design.messages.push(...other.messages);
+  cur = { msg: design.messages.length - other.messages.length, frame: 0 };
+  previewStart = performance.now();
+  markChanged();
+  const n = payloadBytes();
+  toast(`added "${name}" as message ${cur.msg + 1}` + (other.messages.length > 1 ? `-${design.messages.length}` : "") +
+    (n > MAX_BYTES ? ` — now ${n} B, over the badge's ${MAX_BYTES} B limit` : ""), n > MAX_BYTES ? "error" : "");
 }
 const isDirty = () => serialize() !== savedSnapshot;
 async function openDesign(name) {

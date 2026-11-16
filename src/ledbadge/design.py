@@ -145,6 +145,28 @@ class Design:
         return cls(validate_name(d.get("name", "untitled")), msgs, brightness)
 
 
+def combine(designs: list[Design], name: str = "combined", brightness: int | None = None) -> Design:
+    """Concatenate the messages of several designs into one upload (the badge cycles through them).
+
+    Brightness is per upload on the badge, so it comes from ``brightness`` or the first design.
+
+    Raises:
+        ValueError: if the result has more than 8 messages or exceeds the 8 KB payload.
+    """
+    if not designs:
+        raise ValueError("no designs to combine")
+    msgs = [m for d in designs for m in d.messages]
+    if len(msgs) > MAX_MESSAGES:
+        raise ValueError(f"{len(msgs)} messages in total; the badge holds at most {MAX_MESSAGES}")
+    out = Design(name, msgs, designs[0].brightness if brightness is None else brightness)
+    try:
+        out.payload()
+    except ValueError as e:
+        sizes = ", ".join(f"{d.name} {len(d.payload())} B" for d in designs)
+        raise ValueError(f"{e} ({sizes})") from e
+    return out
+
+
 def validate_name(name: str) -> str:
     """Design names double as file names, so keep them simple and path-safe."""
     name = name.strip()

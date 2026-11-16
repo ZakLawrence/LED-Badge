@@ -72,9 +72,12 @@ aside { align-self: start; position: sticky; top: 66px; }
 }
 .library li:hover { background: var(--panel-2); }
 .library li.current { background: #2e2e37; }
-.library li .del { visibility: hidden; padding: 0 6px; border: 0; background: none; color: var(--muted); }
-.library li:hover .del { visibility: visible; }
+.library li .del, .library li .add {
+  visibility: hidden; padding: 0 6px; border: 0; background: none; color: var(--muted);
+}
+.library li:hover .del, .library li:hover .add { visibility: visible; }
 .library li .del:hover { color: var(--danger); }
+.library li .add:hover { color: #9be89b; }
 
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
 .tabs button { padding: 4px 10px; }

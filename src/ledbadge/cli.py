@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from PIL import Image
 
 from . import device, effects
-from .design import Design, DesignMessage, DesignStore
+from .design import Design, DesignMessage, DesignStore, combine
 from .font import render_text
 from .protocol import (ANIM_OFFSET, FRAME_WIDTH, MAX_MESSAGES, WIDTH, Message, Mode,
                        build_payload, max_animation_frames)
@@ -128,12 +128,17 @@ def cmd_designs(args: argparse.Namespace) -> None:
 
 
 def cmd_show(args: argparse.Namespace) -> None:
+    store = DesignStore(args.designs_dir)
     try:
-        design = DesignStore(args.designs_dir).load(args.name)
+        designs = [store.load(n) for n in args.names]
+        design = designs[0] if len(designs) == 1 else combine(designs, args.save or "combined")
     except (FileNotFoundError, ValueError) as e:
         sys.exit(str(e))
     if args.brightness is not None:
         design.brightness = args.brightness
+    if args.save:
+        design.name = args.save
+        print(f"saved design to {store.save(design)}")
     if args.preview:
         args.save = None
         args.png = None
@@ -282,8 +287,9 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("designs", help="list saved designs").set_defaults(func=cmd_designs)
 
-    p = sub.add_parser("show", help="upload a saved design")
-    p.add_argument("name")
+    p = sub.add_parser("show", help="upload saved design(s); several are combined and cycled on the badge")
+    p.add_argument("names", nargs="+", metavar="NAME")
+    p.add_argument("--save", metavar="NAME", help="also save the (combined) result as a design")
     p.add_argument("-B", "--brightness", type=int, choices=(25, 50, 75, 100),
                    help="override the design's brightness")
     p.add_argument("-p", "--preview", action="store_true", help="print the design instead of uploading")

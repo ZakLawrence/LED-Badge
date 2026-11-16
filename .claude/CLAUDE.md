@@ -41,7 +41,8 @@ Everything funnels into one pipeline:
   `Design.payload()` is the single conversion to bytes and `DesignStore.save()` refuses designs over 8 KB.
   Names are validated because they are file names (path traversal is tested).
 - **CLI** (`cli.py`): generator commands share `_common()` options and go through `_upload()` (preview / `--save`
-  as design / send); `show` sends a saved design via `_send()`. `-t auto` = USB if attached, else BLE.
+  as design / send); `show` sends one or more saved designs (`design.combine` concatenates messages) via
+  `_send()`. `-t auto` = USB if attached, else BLE.
 - **GUI** (`gui/server.py` + `gui/static/`): stdlib `ThreadingHTTPServer`, JSON API documented in the module
   docstring; generators run server-side, uploads serialised by a lock. `app.js` keeps its own frame model
   (`Uint8Array` rows), undo stack, and **duplicates** two pieces of Python logic that must stay in sync:
@@ -57,7 +58,8 @@ Everything funnels into one pipeline:
   So `badge clock --live` cannot be seen over USB (untested once the battery is full).
 - BLE: one upload per button press — the badge disconnects once the header-announced data has arrived (padding
   writes then fail; `ble.py` tolerates this) and stops advertising. ~1 s per 16-byte write, ~2 min for 8 KB.
-- Uploads overwrite all 8 message slots.
+- Uploads overwrite all 8 message slots. With several messages the badge cycles through them (confirmed); the
+  badge button can also select one message, which then loops on repeat.
 - Do NOT suggest flashing fossasia/badgemagic-firmware: it targets CH582M only and is irreversible.
 - Protocol reference: fossasia/led-name-badge-ls32 `lednamebadge.py` (GPL — reimplement, don't copy or execute it).
 
