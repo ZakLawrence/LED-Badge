@@ -120,3 +120,19 @@ def test_combine_designs(tmp_path):
     big = Design("big", [DesignMessage.from_message(Message(animation_strip(big_frames), Mode.ANIMATION))])
     with pytest.raises(ValueError, match="big"):
         combine([big, big])
+
+
+@pytest.mark.parametrize("kind,body", [
+    ("pong", {"seed": 2}), ("runner", {"seed": 1}), ("rain", {"frames": 30, "seed": 1}), ("rain", {"frames": 30, "binary": True}), ("wave", {"text": "Hi"}),
+    ("collide", {"events": ["hgg"], "seed": 4}),
+])
+def test_server_animation_generators(server, kind, body):
+    s, r = call(server, "POST", f"/api/generate/{kind}", body)
+    assert s == 200, r
+    assert r["frames"] and all(len(f) == 11 and len(f[0]) == 44 for f in r["frames"])
+    assert 1 <= r["speed"] <= 8
+
+
+def test_server_collide_too_long(server):
+    s, r = call(server, "POST", "/api/generate/collide", {"events": ["hgg", "zmumu", "h4mu"]})
+    assert s == 400 and "at most" in r["error"]

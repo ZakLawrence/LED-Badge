@@ -12,6 +12,11 @@ API (all JSON):
     POST   /api/generate/text           <- {"text", "font", "width"}       -> {"frames": [...]}
     POST   /api/generate/life           <- {"frames", "seed", "density", "wrap"} -> {"frames", "seed"}
     POST   /api/generate/clock          <- {"format", "seconds_bar"}       -> {"frames"}
+    POST   /api/generate/pong           <- {"seed", "rally", "net"}       -> {"frames", "seed", "speed"}
+    POST   /api/generate/rain           <- {"frames", "density", "tail", "seed", "binary", "flip"} -> {"frames", "seed", "speed"}
+    POST   /api/generate/runner         <- {"frames", "seed"}                 -> {"frames", "seed", "speed"}
+    POST   /api/generate/wave           <- {"text", "amplitude", "wavelength", "frames"} -> {"frames", "speed"}
+    POST   /api/generate/collide        <- {"events": [...], "seed", "label"} -> {"frames", "seed", "speed"}
     POST   /api/generate/image          <- {"data" (data URL), "width", "dither", "invert", "threshold",
                                             "max_frames"} -> {"frames", "animated"}
 """
@@ -31,7 +36,7 @@ from urllib.parse import unquote
 
 from PIL import Image
 
-from .. import device, effects
+from .. import animations, collider, device, effects
 from ..design import Design, DesignStore, image_to_rows
 from ..font import render_text
 from ..protocol import MAX_PAYLOAD, WIDTH, max_animation_frames
@@ -200,6 +205,44 @@ def make_handler(store: DesignStore) -> type[BaseHTTPRequestHandler]:
                     n, seed=None if seed in (None, "") else int(seed),
                     density=float(body.get("density", 0.35)), wrap=bool(body.get("wrap", True)))
                 return self._json({"frames": [image_to_rows(f) for f in frames], "seed": used})
+
+            def opt_int(key: str) -> int | None:
+                v = body.get(key)
+                return None if v in (None, "") else int(v)
+
+            if route == "generate/pong":
+                frames, seed = animations.pong(seed=opt_int("seed"), rally=opt_int("rally"),
+                                               net=bool(body.get("net", True)))
+                return self._json({"frames": [image_to_rows(f) for f in frames], "seed": seed, "speed": 8})
+
+            if route == "generate/rain":
+                if body.get("binary"):
+                    frames, seed = animations.binary_rain(opt_int("frames") or 60, seed=opt_int("seed"),
+                                                          density=float(body.get("density", 0.7)),
+                                                          flip=bool(body.get("flip", True)))
+                else:
+                    frames, seed = animations.rain(opt_int("frames") or 60, density=float(body.get("density", 0.7)),
+                                                   tail=opt_int("tail") or 3, seed=opt_int("seed"))
+                return self._json({"frames": [image_to_rows(f) for f in frames], "seed": seed, "speed": 7})
+
+            if route == "generate/runner":
+                frames, seed = animations.runner(opt_int("frames") or 120, seed=opt_int("seed"))
+                return self._json({"frames": [image_to_rows(f) for f in frames], "seed": seed, "speed": 8})
+
+            if route == "generate/wave":
+                frames = animations.wave_text(str(body.get("text", "")) or " ",
+                                              amplitude=float(body.get("amplitude", 2)),
+                                              wavelength=float(body.get("wavelength", 24)),
+                                              frames=opt_int("frames"))
+                return self._json({"frames": [image_to_rows(f) for f in frames], "speed": 7})
+
+            if route == "generate/collide":
+                frames, seed = collider.collision(list(body.get("events") or []) or None, seed=opt_int("seed"),
+                                                  label=bool(body.get("label", True)))
+                if len(frames) > max_animation_frames():
+                    raise ApiError(f"{len(frames)} frames; the badge holds at most {max_animation_frames()} "
+                                   "- choose fewer events")
+                return self._json({"frames": [image_to_rows(f) for f in frames], "seed": seed, "speed": 7})
 
             if route == "generate/clock":
                 frames = effects.clock_frames(fmt=body.get("format", "%H:%M"),

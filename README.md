@@ -10,6 +10,11 @@ uv run badge text "Hello" "World" -m fixed
 uv run badge image cat.png                # still image (dithered), or animated GIF -> animation
 uv run badge life                         # Game of Life, pre-computed and played on the badge
 uv run badge clock --live                 # big-digit clock, re-uploaded every minute
+uv run badge pong                         # self-playing Pong (one point, loops)
+uv run badge runner                       # dino jumping over scrolling cacti
+uv run badge rain [--binary [--no-flip]]  # rain drops, or Matrix-style falling 0s and 1s
+uv run badge wave "Hello!"                # letters bobbing on a sine wave (scrolls if too wide)
+uv run badge collide hgg zmumu            # collider event displays: hgg, zmumu, h4mu, dijet
 uv run badge test border|frame|modes      # hardware test patterns
 
 uv run badge gui                          # Badge Studio editor in your browser (http://localhost:8044)

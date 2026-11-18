@@ -573,8 +573,23 @@ async function generate() {
       (r.frames.length < +val("frames") ? " (died out or repeated early)" : "");
     return { frames: r.frames.map(rowsToFrame), mode: "animation", speed: 6 };
   }
-  const r = await api("POST", "generate/clock", { format: val("format") });
-  return { frames: r.frames.map(rowsToFrame), mode: "animation", speed: 3 };
+  if (genKind === "clock") {
+    const r = await api("POST", "generate/clock", { format: val("format") });
+    return { frames: r.frames.map(rowsToFrame), mode: "animation", speed: 3 };
+  }
+  let body;
+  if (genKind === "pong") body = { rally: val("rally"), seed: val("seed"), net: chk("net") };
+  else if (genKind === "runner") body = { frames: val("frames"), seed: val("seed") };
+  else if (genKind === "rain") body = { frames: val("frames"), density: +val("density"), tail: val("tail"), seed: val("seed"), binary: chk("binary"), flip: chk("flip") };
+  else if (genKind === "wave") body = { text: val("text"), amplitude: +val("amplitude"), wavelength: +val("wavelength"), frames: val("frames") };
+  else {
+    const events = [...form.querySelectorAll('input[name="ev"]:checked')].map((e) => e.value);
+    if (!events.length) throw new Error("tick at least one event");
+    body = { events, seed: val("seed"), label: chk("label") };
+  }
+  const r = await api("POST", "generate/" + genKind, body);
+  if (genKind === "collide") $("#collide-seed").textContent = `seed ${r.seed}: ${r.frames.length} frames`;
+  return { frames: r.frames.map(rowsToFrame), mode: "animation", speed: r.speed };
 }
 
 async function applyGenerated(how) {

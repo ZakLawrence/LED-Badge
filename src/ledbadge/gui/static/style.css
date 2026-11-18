@@ -111,6 +111,9 @@ aside { align-self: start; position: sticky; top: 66px; }
 .generators form label.check { flex-direction: row; align-items: center; font-size: 13px; }
 .generators input:not([type=checkbox]), .generators select { width: 100%; }
 .gen-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.generators fieldset.events { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin: 0;
+  display: flex; flex-direction: column; gap: 4px; }
+.generators fieldset.events legend { color: var(--muted); font-size: 12px; padding: 0 4px; }
 
 .meter { margin-top: 16px; }
 .meter-bar { height: 8px; background: var(--panel-2); border-radius: 99px; overflow: hidden; }

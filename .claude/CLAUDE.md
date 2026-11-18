@@ -48,6 +48,13 @@ Everything funnels into one pipeline:
   (`Uint8Array` rows), undo stack, and **duplicates** two pieces of Python logic that must stay in sync:
   payload size (`payloadBytes` vs `build_payload`) and the 44-px split/join rules. Its preview (`displayAt`)
   only approximates badge timing (`FPS` from fossasia docs; scroll speeds are guesses).
+- **Animations** (`effects.py` life/clock, `animations.py` pong/runner/rain/binary rain/wave text,
+  `collider.py` event displays) return lists of 44x11 frames that must **loop seamlessly** and stay
+  <= `max_animation_frames()` (~123). Looping is by construction: things move an integer number of laps per
+  loop (rain, binary rain, runner world is a ring of `frames` px), or the sequence ends in its start state
+  (pong). Randomness is seeded; commands print the seed. Tests check frame N == frame 0 via the internal
+  per-frame helpers (`_rain_frame`, `_binary_frame`, `_runner_layers`), and that the runner dino never
+  touches a cactus. To eyeball frames, render a contact sheet with `render.upscale_preview` and view the PNG.
 - **Fonts** (`font.py`) are hand-drawn glyph strings because TrueType fonts at 11 px rendered badly; unknown
   characters fall back to `?`.
 

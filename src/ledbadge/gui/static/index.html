@@ -118,6 +118,11 @@
       <button data-gen="image">Image</button>
       <button data-gen="life">Life</button>
       <button data-gen="clock">Clock</button>
+      <button data-gen="pong">Pong</button>
+      <button data-gen="runner">Runner</button>
+      <button data-gen="rain">Rain</button>
+      <button data-gen="wave">Wave</button>
+      <button data-gen="collide">Collide</button>
     </div>
 
     <form class="gen" data-gen="text">
@@ -148,6 +153,49 @@
       <label>Format <input name="format" value="%H:%M"></label>
       <p class="hint">Time at generation. The badge has no clock, so this is a snapshot
         (two frames for the blinking colon; use animation mode, speed 3).</p>
+    </form>
+
+    <form class="gen" data-gen="pong" hidden>
+      <label>Returns before the miss <input name="rally" type="number" min="0" max="2" placeholder="auto (max that fits)"></label>
+      <label>Seed <input name="seed" type="number" placeholder="random"></label>
+      <label class="check"><input name="net" type="checkbox" checked> centre net</label>
+      <p class="hint">One point, then the next serve: loops seamlessly. Each return adds 41 frames.</p>
+    </form>
+
+    <form class="gen" data-gen="runner" hidden>
+      <label>Loop length (frames) <input name="frames" type="number" min="40" max="120" step="4" value="120"></label>
+      <label>Seed <input name="seed" type="number" placeholder="random"></label>
+      <p class="hint">A dino jumps over scrolling cacti; the world loops seamlessly.</p>
+    </form>
+
+    <form class="gen" data-gen="rain" hidden>
+      <label>Loop length (frames) <input name="frames" type="number" min="10" max="123" value="60"></label>
+      <label>Density <input name="density" type="number" min="0.05" max="1" step="0.05" value="0.7"></label>
+      <label class="check"><input name="binary" type="checkbox"> binary (Matrix 0s and 1s)</label>
+      <label class="check"><input name="flip" type="checkbox" checked> binary: some digits flip 0↔1</label>
+      <label>Max tail (drops) <input name="tail" type="number" min="0" max="8" value="3"></label>
+      <label>Seed <input name="seed" type="number" placeholder="random"></label>
+    </form>
+
+    <form class="gen" data-gen="wave" hidden>
+      <label>Text <input name="text" value="Hello!" autocomplete="off"></label>
+      <label>Amplitude (rows) <input name="amplitude" type="number" min="0" max="3" step="0.5" value="2"></label>
+      <label>Wavelength (px) <input name="wavelength" type="number" min="4" max="88" value="24"></label>
+      <label>Frames per wave <input name="frames" type="number" min="4" max="123" placeholder="20"></label>
+      <p class="hint">Text wider than the badge scrolls while waving.</p>
+    </form>
+
+    <form class="gen" data-gen="collide" hidden>
+      <fieldset class="events">
+        <legend>Events (in order, ~45-60 frames each)</legend>
+        <label class="check"><input name="ev" type="checkbox" value="hgg" checked> H→γγ</label>
+        <label class="check"><input name="ev" type="checkbox" value="zmumu" checked> Z→μμ</label>
+        <label class="check"><input name="ev" type="checkbox" value="h4mu"> H→4μ</label>
+        <label class="check"><input name="ev" type="checkbox" value="dijet"> dijet</label>
+      </fieldset>
+      <label>Seed <input name="seed" type="number" placeholder="random"></label>
+      <label class="check"><input name="label" type="checkbox" checked> show label</label>
+      <p class="hint" id="collide-seed"></p>
     </form>
 
     <div class="gen-actions">

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from PIL import Image
 
-from . import device, effects
+from . import animations, collider, device, effects
 from .design import Design, DesignMessage, DesignStore, combine
 from .font import render_text
 from .protocol import (ANIM_OFFSET, FRAME_WIDTH, MAX_MESSAGES, WIDTH, Message, Mode,
@@ -201,6 +201,48 @@ def cmd_life(args: argparse.Namespace) -> None:
     _upload(args, [_msg(args, animation_strip(frames, args.frame_offset), Mode.ANIMATION, 6)])
 
 
+def _animate(args: argparse.Namespace, frames: list[Image.Image], speed: int) -> None:
+    """Upload generated frames as one animation-mode message."""
+    limit = max_animation_frames()
+    if len(frames) > limit:
+        sys.exit(f"{len(frames)} frames, but one upload holds at most {limit}")
+    print(f"{len(frames)} frames")
+    _upload(args, [_msg(args, animation_strip(frames, args.frame_offset), Mode.ANIMATION, speed)])
+
+
+def cmd_pong(args: argparse.Namespace) -> None:
+    frames, seed = animations.pong(seed=args.seed, rally=args.rally, net=not args.no_net)
+    print(f"seed={seed}")
+    _animate(args, frames, 8)
+
+
+def cmd_rain(args: argparse.Namespace) -> None:
+    if args.binary:
+        frames, seed = animations.binary_rain(args.frames, density=args.density, seed=args.seed,
+                                              flip=not args.no_flip)
+    else:
+        frames, seed = animations.rain(args.frames, density=args.density, tail=args.tail, seed=args.seed)
+    print(f"seed={seed}")
+    _animate(args, frames, 7)
+
+
+def cmd_runner(args: argparse.Namespace) -> None:
+    frames, seed = animations.runner(args.frames, seed=args.seed)
+    print(f"seed={seed}")
+    _animate(args, frames, 8)
+
+
+def cmd_wave(args: argparse.Namespace) -> None:
+    _animate(args, animations.wave_text(args.text, amplitude=args.amplitude,
+                                        wavelength=args.wavelength, frames=args.frames), 7)
+
+
+def cmd_collide(args: argparse.Namespace) -> None:
+    frames, seed = collider.collision(args.events or None, seed=args.seed, label=not args.no_label)
+    print(f"seed={seed}")
+    _animate(args, frames, 7)
+
+
 def cmd_clock(args: argparse.Namespace) -> None:
     def build(now: datetime) -> list[Message]:
         frames = effects.clock_frames(now, fmt=args.format, seconds_bar=args.seconds_bar,
@@ -277,6 +319,45 @@ def main(argv: list[str] | None = None) -> None:
     _common(p, mode=False)
     p.set_defaults(func=cmd_life, mode=None)
 
+    p = sub.add_parser("pong", help="self-playing Pong (one point, loops)")
+    p.add_argument("--seed", type=int)
+    p.add_argument("--rally", type=int, help="returns before the miss (default: as many as fit)")
+    p.add_argument("--no-net", action="store_true")
+    _common(p, mode=False)
+    p.set_defaults(func=cmd_pong, mode=None)
+
+    p = sub.add_parser("rain", help="digital rain (seamless loop)")
+    p.add_argument("-n", "--frames", type=int, default=60, help="loop length in frames")
+    p.add_argument("--density", type=float, default=0.7, help="fraction of columns with a drop/stream")
+    p.add_argument("--tail", type=int, default=3, help="max tail length (drops only)")
+    p.add_argument("--binary", action="store_true", help="Matrix-style falling 0s and 1s instead of drops")
+    p.add_argument("--no-flip", action="store_true", help="binary: digits never change between 0 and 1")
+    p.add_argument("--seed", type=int)
+    _common(p, mode=False)
+    p.set_defaults(func=cmd_rain, mode=None)
+
+    p = sub.add_parser("runner", help="endless runner: a dino jumps over scrolling cacti")
+    p.add_argument("-n", "--frames", type=int, default=120, help="loop length (multiple of 4, max 120)")
+    p.add_argument("--seed", type=int)
+    _common(p, mode=False)
+    p.set_defaults(func=cmd_runner, mode=None)
+
+    p = sub.add_parser("wave", help="text bobbing on a sine wave (scrolls if wider than the badge)")
+    p.add_argument("text")
+    p.add_argument("--amplitude", type=float, default=2.0, help="rows up/down")
+    p.add_argument("--wavelength", type=float, default=24.0, help="px per wave")
+    p.add_argument("-n", "--frames", type=int, help="frames per wave cycle for text that fits (default 20)")
+    _common(p, mode=False)
+    p.set_defaults(func=cmd_wave, mode=None)
+
+    p = sub.add_parser("collide", help="collider event display (beams, tracks, highlighted signal, label)")
+    p.add_argument("events", nargs="*", choices=list(collider.EVENTS),
+                   help="events in order (default: hgg zmumu); ~45-60 frames each")
+    p.add_argument("--seed", type=int)
+    p.add_argument("--no-label", action="store_true", help="skip the H→γγ-style label")
+    _common(p, mode=False)
+    p.set_defaults(func=cmd_collide, mode=None)
+
     p = sub.add_parser("clock", help="show the time (big digits, blinking colon)")
     p.add_argument("--live", action="store_true", help="keep running and update every minute")
     p.add_argument("--format", default="%H:%M", help="strftime format (digits, ':', '-' only)")
@@ -309,7 +390,10 @@ def main(argv: list[str] | None = None) -> None:
     p.set_defaults(func=cmd_test, mode=None)
 
     args = ap.parse_args(argv)
-    args.func(args)
+    try:
+        args.func(args)
+    except ValueError as e:
+        sys.exit(f"error: {e}")
 
 
 if __name__ == "__main__":
